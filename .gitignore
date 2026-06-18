@@ -1,0 +1,5 @@
+.env 
+app/utils/.env 
+notes.db 
+__pycache__/ 
+*.pyc 
