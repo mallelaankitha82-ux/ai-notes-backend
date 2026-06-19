@@ -1,17 +1,20 @@
 import os
 from dotenv import load_dotenv
-from google import genai
+import google.generativeai as genai
 
-# Load .env
+# Load environment variables
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
-    raise Exception("GEMINI_API_KEY not found in .env file")
+    raise Exception("GEMINI_API_KEY not found")
 
-# Create Client
-client = genai.Client(api_key=GEMINI_API_KEY)
+# Configure Gemini
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Create model
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 
 # ==========================
@@ -19,7 +22,6 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 # ==========================
 def generate_notes(topic: str, words: int = 300, language: str = "English"):
     try:
-
         prompt = f"""
 Generate detailed notes on {topic}
 in approximately {words} words.
@@ -34,11 +36,7 @@ Give:
 - Conclusion
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
+        response = model.generate_content(prompt)
         return response.text
 
     except Exception as e:
@@ -47,11 +45,10 @@ Give:
 
 
 # ==========================
-# Summarize Text / PDF
+# Summarize PDF Text
 # ==========================
 def summarize_pdf_text(text: str, language: str = "English"):
     try:
-
         prompt = f"""
 Summarize the following content.
 
@@ -60,11 +57,7 @@ Language: {language}
 {text[:10000]}
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
+        response = model.generate_content(prompt)
         return response.text
 
     except Exception as e:
@@ -77,7 +70,6 @@ Language: {language}
 # ==========================
 def ask_pdf_question(pdf_text: str, question: str):
     try:
-
         prompt = f"""
 Based on the following PDF content:
 
@@ -93,11 +85,7 @@ reply only:
 Answer not found in PDF.
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
+        response = model.generate_content(prompt)
         return response.text
 
     except Exception as e:
@@ -110,7 +98,6 @@ Answer not found in PDF.
 # ==========================
 def ask_notes_question(notes_text: str, question: str):
     try:
-
         prompt = f"""
 Notes Content:
 
@@ -123,11 +110,7 @@ Question:
 Answer only from the notes content.
 """
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
+        response = model.generate_content(prompt)
         return response.text
 
     except Exception as e:
