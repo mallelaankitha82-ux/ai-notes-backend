@@ -5,6 +5,7 @@ from app.database import engine
 from app.models.models import Base
 from app.routers import auth, notes, pdf, admin
 
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -17,8 +18,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "https://YOUR-FRONTEND-NAME.vercel.app"  # Replace with your actual frontend URL
+        "http://localhost:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
