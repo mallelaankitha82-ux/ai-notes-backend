@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 from app.models.models import UserRole
-
+from pydantic import BaseModel
 
 class UserRegister(BaseModel):
     name: str
@@ -72,3 +72,9 @@ class AdminStats(BaseModel):
     total_users: int
     total_notes: int
     total_pdf_notes: int
+class PDFOut(BaseModel):
+    pdf_id: int
+    filename: str
+
+class Config:
+        from_attributes = True

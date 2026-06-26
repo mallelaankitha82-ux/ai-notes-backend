@@ -18,7 +18,11 @@ def generate(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    content = generate_notes(payload.topic, payload.word_limit, payload.language)
+    content = generate_notes(
+        payload.topic,
+        payload.word_limit,
+        payload.language
+    )
 
     note = Note(
         user_id=current_user.user_id,
@@ -64,7 +68,8 @@ def search_notes(
         db.query(Note)
         .filter(
             Note.user_id == current_user.user_id,
-            Note.topic.ilike(f"%{q}%") | Note.generated_note.ilike(f"%{q}%"),
+            Note.topic.ilike(f"%{q}%") |
+            Note.generated_note.ilike(f"%{q}%"),
         )
         .order_by(Note.created_at.desc())
         .all()
@@ -98,7 +103,8 @@ def download_note(
         return PlainTextResponse(
             content=content,
             headers={
-                "Content-Disposition": f'attachment; filename="note_{note_id}.txt"'
+                "Content-Disposition":
+                f'attachment; filename="note_{note_id}.txt"'
             },
         )
 
@@ -124,6 +130,38 @@ def download_note(
         io.BytesIO(pdf_data),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="note_{note_id}.pdf"'
+            "Content-Disposition":
+            f'attachment; filename="note_{note_id}.pdf"'
         },
     )
+
+
+@router.delete("/{note_id}")
+def delete_note(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    note = db.query(Note).filter(Note.note_id == note_id).first()
+
+    if not note:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+
+    if (
+        note.user_id != current_user.user_id
+        and current_user.role != "admin"
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied"
+        )
+
+    db.delete(note)
+    db.commit()
+
+    return {
+        "message": "Note deleted successfully"
+    }

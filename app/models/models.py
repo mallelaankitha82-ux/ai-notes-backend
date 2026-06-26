@@ -3,7 +3,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
 from app.database import Base
-
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from datetime import datetime
 
 class UserRole(str, enum.Enum):
     user = "user"
@@ -36,3 +37,12 @@ class Note(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     owner = relationship("User", back_populates="notes")
+    class PDFDocument(Base):
+        __tablename__ = "pdf_documents"
+
+        pdf_id = Column(Integer, primary_key=True, index=True)
+        user_id = Column(Integer, ForeignKey("users.user_id"))
+        filename = Column(String(255))
+        extracted_text = Column(Text)
+        summary = Column(Text, nullable=True)
+        created_at = Column(DateTime, default=datetime.utcnow)

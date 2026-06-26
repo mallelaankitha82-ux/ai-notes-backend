@@ -1,76 +1,205 @@
 import os
+from google import genai
 from dotenv import load_dotenv
-import google.generativeai as genai
 
+# ==========================
+# Load Environment Variables
+# ==========================
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = os.getenv("GEMINI_API_KEY")
 
-genai.configure(api_key=GEMINI_API_KEY)
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in .env file")
 
-model = genai.GenerativeModel("gemini-2.5-flash")
+# ==========================
+# Gemini Client
+# ==========================
+client = genai.Client(api_key=API_KEY)
 
 
-def generate_notes(topic: str, words: int = 300, language: str = "English"):
+# ==========================
+# Generate AI Notes
+# ==========================
+def generate_notes(topic, word_limit=300, language="English"):
     try:
         prompt = f"""
-Generate detailed notes on {topic}
-in approximately {words} words.
+Generate detailed study notes.
 
-IMPORTANT:
-Write the entire response in {language} language.
+Topic:
+{topic}
 
-Give:
-- Heading
-- Introduction
-- Main Points
-- Conclusion
+Language:
+{language}
+
+Approximate Word Limit:
+{word_limit}
+
+Return in this format:
+
+# Title
+
+## Introduction
+
+## Main Concepts
+
+## Key Points
+
+## Conclusion
 """
-        response = model.generate_content(prompt)
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+
         return response.text
 
     except Exception as e:
-        return f"# {topic}\n\nGemini Error: {str(e)}"
+        print("Gemini Generate Notes Error:", e)
 
-
-def summarize_pdf_text(text: str, language: str = "English"):
-    try:
-        prompt = f"""
-Summarize the following content.
+        return f"""
+# {topic}
 
 Language: {language}
 
-{text[:10000]}
+## Introduction
+This note was generated in fallback mode.
+
+## Main Concepts
+Gemini API unavailable.
+
+## Key Points
+- Point 1
+- Point 2
+- Point 3
+
+## Conclusion
+Please try again later.
 """
-        response = model.generate_content(prompt)
+
+
+# ==========================
+# Summarize PDF/Text
+# ==========================
+def summarize_text(text):
+    try:
+
+        prompt = f"""
+You are an expert notes generator.
+
+Read the following PDF carefully.
+
+{text}
+
+Generate the response in this format.
+
+# Notes
+
+## Introduction
+
+## Main Concepts
+
+## Key Points
+
+## Advantages
+
+## Disadvantages
+
+## Applications
+
+## Conclusion
+
+--------------------------------------
+
+# Summary
+
+Write a concise summary.
+
+## Important Points
+
+## Final Conclusion
+"""
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+
         return response.text
 
     except Exception as e:
-        return f"PDF Summary Error: {str(e)}"
+        print("Gemini Summary Error:", e)
+
+        return f"""
+# Notes
+
+Unable to generate notes.
+
+--------------------------------------
+
+# Summary
+
+Unable to generate summary.
+
+Error:
+{str(e)}
+"""
 
 
-def ask_pdf_question(pdf_text: str, question: str):
+# ==========================
+# PDF Compatibility
+# ==========================
+def summarize_pdf_text(text):
+    return summarize_text(text)
+
+
+# ==========================
+# Ask Questions From PDF
+# ==========================
+def ask_pdf_question(pdf_text, question):
     try:
+
         prompt = f"""
-Based on the following PDF content:
+You are an AI assistant.
+
+PDF Content:
 
 {pdf_text}
 
-Answer this question:
+Question:
 
 {question}
+
+Answer ONLY from the PDF.
+
+If the answer is unavailable in the PDF, reply:
+
+"This information is not available in the uploaded PDF."
 """
-        response = model.generate_content(prompt)
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+
         return response.text
 
     except Exception as e:
-        return f"Gemini Error: {str(e)}"
+        print("Gemini PDF Question Error:", e)
+        return f"Question answering failed: {str(e)}"
 
 
-def ask_notes_question(notes_text: str, question: str):
+# ==========================
+# Ask Questions From Notes
+# ==========================
+def ask_notes_question(notes_text, question):
     try:
+
         prompt = f"""
-Notes Content:
+You are an AI assistant.
+
+Notes:
 
 {notes_text}
 
@@ -78,11 +207,18 @@ Question:
 
 {question}
 
-Answer only from the notes content.
+Answer ONLY using the notes.
+
+If the answer is unavailable, say so.
 """
-        response = model.generate_content(prompt)
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt,
+        )
+
         return response.text
 
     except Exception as e:
-        return f"Gemini Error: {str(e)}"
-
+        print("Gemini Notes Question Error:", e)
+        return f"Question answering failed: {str(e)}"
